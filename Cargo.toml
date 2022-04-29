@@ -3,6 +3,8 @@ name = "rufetch"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[net]
+git-fetch-with-cli = true
 
 [dependencies]
+sysinfo = "0.23.11"
