@@ -1,4 +1,29 @@
+use serde_derive::Deserialize;
 use sysinfo::{RefreshKind, System, SystemExt};
+
+#[derive(Deserialize)]
+struct Config {
+    ram_unit: char,
+    swap_unit: char,
+}
+
+fn read_config() -> Config {
+    let config = Config {
+        ram_unit: 'M',
+        swap_unit: 'M',
+    };
+
+    let file = std::fs::read_to_string("/home/artin/.config/rufetch/rufetch.toml");
+    if file.is_ok() {
+        let file = file.unwrap();
+        let config_file = toml::from_str(&file);
+        if config_file.is_ok() {
+            return config_file.unwrap();
+        }
+    }
+
+    return config;
+}
 
 fn get_mem(sys: &System, unit: char) -> (u64, u64, u64) {
     let total_mem_size = sys.total_memory();
@@ -125,4 +150,6 @@ fn main() {
     println!("{}", os_info(&sys).0);
 
     println!("{}", cpu_count());
+    println!("{}", read_config().ram_unit);
+    println!("{}", get_mem(&sys, read_config().ram_unit).0);
 }
