@@ -1,2 +1,19 @@
-swap_unit = "G"
-ram_unit = "G"
+# K ==> Kilobyte
+# M ==> Megabyte
+# G ==> Gigabyte
+# T ==> Terabyte
+# I think that was obvious but For making sure no
+# one will find it difficult to set units.
+ram_unit = "M"
+swap_unit = "M"
+
+free_mem = true
+total_mem = true
+used_mem = true
+
+free_swap = true
+total_swap = true
+used_swap = true
+
+cpu_count = true
+
