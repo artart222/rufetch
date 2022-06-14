@@ -1,104 +1,99 @@
 use serde_derive::Deserialize;
+use std::collections::HashMap;
 use sysinfo::{RefreshKind, System, SystemExt};
 
 #[derive(Deserialize)]
 struct Config {
     ram_unit: char,
     swap_unit: char,
+    free_mem: bool,
+    total_mem: bool,
+    used_mem: bool,
+    free_swap: bool,
+    total_swap: bool,
+    used_swap: bool,
+    cpu_count: bool,
+}
+
+fn unit_converter(current_unit: char, convert_to: char, input: u64) -> u64 {
+    let units = HashMap::from([
+        ('B', 1.0),
+        ('K', 1000.0),
+        ('M', 1000000.0),
+        ('G', 1000000000.0),
+        ('T', 1000000000000.0),
+    ]);
+    return (input as f64 * (units.get(&current_unit).unwrap() / units.get(&convert_to).unwrap()))
+        .round() as u64;
 }
 
 fn read_config() -> Config {
     let config = Config {
-        ram_unit: 'M',
-        swap_unit: 'M',
+        ram_unit: 'K',
+        swap_unit: 'K',
+        free_mem: true,
+        total_mem: true,
+        used_mem: true,
+        free_swap: true,
+        total_swap: true,
+        used_swap: true,
+        cpu_count: true,
     };
 
     let file = std::fs::read_to_string("/home/artin/.config/rufetch/rufetch.toml");
     if file.is_ok() {
-        let file = file.unwrap();
-        let config_file = toml::from_str(&file);
-        if config_file.is_ok() {
-            return config_file.unwrap();
-        }
-    }
-
-    return config;
-}
-
-fn get_mem(sys: &System, unit: char) -> (u64, u64, u64) {
-    let total_mem_size = sys.total_memory();
-    let free_mem_size = sys.free_memory();
-    let used_mem_size = sys.used_memory();
-    match unit {
-        'B' => {
-            return (
-                total_mem_size * 1000,
-                free_mem_size * 1000,
-                used_mem_size * 1000,
-            )
-        }
-        'K' => return (total_mem_size, free_mem_size, used_mem_size),
-        'M' => {
-            return (
-                total_mem_size / 1000,
-                free_mem_size / 1000,
-                used_mem_size / 1000,
-            )
-        }
-        'G' => {
-            return (
-                total_mem_size / 1000000,
-                free_mem_size / 1000000,
-                used_mem_size / 1000000,
-            )
-        }
-        'T' => {
-            return (
-                total_mem_size / 1000000000,
-                free_mem_size / 1000000000,
-                used_mem_size / 1000000000,
-            )
-        }
-        _ => return (0, 0, 0),
+        match toml::from_str(&file.unwrap()) {
+            Ok(value) => return value,
+            Err(_) => {
+                println!("The structure of your config file is not correct.");
+                println!("Using default config.");
+                return config;
+            }
+        };
+    } else {
+        println!("Can't open/read config file");
+        return config;
     }
 }
 
-fn get_swp(sys: &System, unit: char) -> (u64, u64, u64) {
-    let total_swp_size = sys.total_swap();
-    let free_swp_size = sys.free_swap();
-    let used_swp_size = sys.used_swap();
-    match unit {
-        'B' => {
-            return (
-                total_swp_size * 1000,
-                free_swp_size * 1000,
-                used_swp_size * 1000,
-            )
-        }
-        'K' => return (total_swp_size, free_swp_size, used_swp_size),
-        'M' => {
-            return (
-                total_swp_size / 1000,
-                free_swp_size / 1000,
-                used_swp_size / 1000,
-            )
-        }
-        'G' => {
-            return (
-                total_swp_size / 1000000,
-                free_swp_size / 1000000,
-                used_swp_size / 1000000,
-            )
-        }
-        'T' => {
-            return (
-                total_swp_size / 1000000000,
-                free_swp_size / 1000000000,
-                used_swp_size / 1000000000,
-            )
-        }
-        _ => return (0, 0, 0),
+fn get_mem(sys: &System, config: &Config) -> (u64, u64, u64) {
+    let mut total_mem: u64 = 0;
+    if config.total_mem {
+        total_mem = sys.total_memory();
     }
+    let mut free_mem: u64 = 0;
+    if config.free_mem {
+        free_mem = sys.free_memory();
+    }
+    let mut used_mem: u64 = 0;
+    if config.used_mem {
+        used_mem = sys.used_memory();
+    }
+    return (
+        unit_converter('K', config.ram_unit, total_mem),
+        unit_converter('K', config.ram_unit, free_mem),
+        unit_converter('K', config.ram_unit, used_mem),
+    );
+}
+
+fn get_swap(sys: &System, config: &Config) -> (u64, u64, u64) {
+    let mut total_swap: u64 = 0;
+    if config.total_swap {
+        total_swap = sys.total_swap();
+    }
+    let mut free_swap: u64 = 0;
+    if config.free_swap {
+        free_swap = sys.free_swap();
+    }
+    let mut used_swap: u64 = 0;
+    if config.used_swap {
+        used_swap = sys.used_swap();
+    }
+    return (
+        unit_converter('K', config.swap_unit, total_swap),
+        unit_converter('K', config.swap_unit, free_swap),
+        unit_converter('K', config.swap_unit, used_swap),
+    );
 }
 
 fn os_info(sys: &System) -> (String, String, String, String) {
@@ -146,10 +141,8 @@ fn cpu_count() -> u8 {
 fn main() {
     let mut sys = System::new_all();
     sys.refresh_all();
-    println!("{}/{}", get_mem(&sys, 'M').0, get_mem(&sys, 'M').2);
-    println!("{}", os_info(&sys).0);
-
-    println!("{}", cpu_count());
-    println!("{}", read_config().ram_unit);
-    println!("{}", get_mem(&sys, read_config().ram_unit).0);
+    let config = read_config();
+    println!("{:.2}", get_mem(&sys, &config).0);
+    println!("{:.2}", get_mem(&sys, &config).1);
+    println!("{:.2}", get_mem(&sys, &config).2);
 }
