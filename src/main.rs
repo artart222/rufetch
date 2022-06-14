@@ -1,5 +1,5 @@
 use serde_derive::Deserialize;
-use std::collections::HashMap;
+use std::{clone, collections::HashMap};
 use sysinfo::{RefreshKind, System, SystemExt};
 
 #[derive(Deserialize)]
@@ -13,6 +13,7 @@ struct Config {
     total_swap: bool,
     used_swap: bool,
     cpu_count: bool,
+    ascii: String,
 }
 
 fn unit_converter(current_unit: char, convert_to: char, input: u64) -> u64 {
@@ -38,6 +39,7 @@ fn read_config() -> Config {
         total_swap: true,
         used_swap: true,
         cpu_count: true,
+        ascii: "".to_string(),
     };
 
     let file = std::fs::read_to_string("/home/artin/.config/rufetch/rufetch.toml");
@@ -57,42 +59,18 @@ fn read_config() -> Config {
 }
 
 fn get_mem(sys: &System, config: &Config) -> (u64, u64, u64) {
-    let mut total_mem: u64 = 0;
-    if config.total_mem {
-        total_mem = sys.total_memory();
-    }
-    let mut free_mem: u64 = 0;
-    if config.free_mem {
-        free_mem = sys.free_memory();
-    }
-    let mut used_mem: u64 = 0;
-    if config.used_mem {
-        used_mem = sys.used_memory();
-    }
     return (
-        unit_converter('K', config.ram_unit, total_mem),
-        unit_converter('K', config.ram_unit, free_mem),
-        unit_converter('K', config.ram_unit, used_mem),
+        unit_converter('K', config.ram_unit, sys.total_memory()),
+        unit_converter('K', config.ram_unit, sys.free_memory()),
+        unit_converter('K', config.ram_unit, sys.used_memory()),
     );
 }
 
 fn get_swap(sys: &System, config: &Config) -> (u64, u64, u64) {
-    let mut total_swap: u64 = 0;
-    if config.total_swap {
-        total_swap = sys.total_swap();
-    }
-    let mut free_swap: u64 = 0;
-    if config.free_swap {
-        free_swap = sys.free_swap();
-    }
-    let mut used_swap: u64 = 0;
-    if config.used_swap {
-        used_swap = sys.used_swap();
-    }
     return (
-        unit_converter('K', config.swap_unit, total_swap),
-        unit_converter('K', config.swap_unit, free_swap),
-        unit_converter('K', config.swap_unit, used_swap),
+        unit_converter('K', config.swap_unit, sys.total_swap()),
+        unit_converter('K', config.swap_unit, sys.free_swap()),
+        unit_converter('K', config.swap_unit, sys.used_swap()),
     );
 }
 
@@ -142,7 +120,89 @@ fn main() {
     let mut sys = System::new_all();
     sys.refresh_all();
     let config = read_config();
-    println!("{:.2}", get_mem(&sys, &config).0);
-    println!("{:.2}", get_mem(&sys, &config).1);
-    println!("{:.2}", get_mem(&sys, &config).2);
+    let mut datas: Vec<String> = Vec::new();
+    if config.total_mem || config.used_mem || config.free_mem {
+        let mem_info = get_mem(&sys, &config);
+        if config.total_mem {
+            datas.push(mem_info.0.to_string());
+        }
+        if config.free_mem {
+            datas.push(mem_info.1.to_string());
+        }
+        if config.used_mem {
+            datas.push(mem_info.2.to_string());
+        }
+    }
+    if config.total_swap || config.used_swap || config.free_swap {
+        let swap_info = get_swap(&sys, &config);
+        if config.total_swap {
+            datas.push(swap_info.0.to_string());
+        }
+        if config.free_swap {
+            datas.push(swap_info.1.to_string());
+        }
+        if config.used_swap {
+            datas.push(swap_info.2.to_string());
+        }
+    }
+
+    let mut most_len = 0;
+    let mut lines = 0;
+    for line in config.ascii.to_string().lines() {
+        lines += 1;
+        if line.len() > most_len {
+            most_len = line.len();
+        }
+    }
+
+    let a = datas.len();
+    let mut index = 0;
+    if lines >= datas.len() {
+        for line in config.ascii.to_string().lines() {
+            let mut white_space: String = "".to_string();
+            for i in line.len()..most_len {
+                white_space += " ";
+            }
+            if datas.len() >= index + 1 {
+                println!("{}{}   {}", line, white_space, datas[index]);
+            } else {
+                println!("{}{}   ", line, white_space);
+            }
+            index += 1;
+        }
+    } else {
+        if lines == 0 {
+            for data in datas {
+                println!("{}", data);
+            }
+        } else {
+            let mut i = 0;
+            for data in datas {
+                if i <= lines - 1 {
+                    let mut white_space: String = "".to_string();
+                    if config.ascii.to_string().lines().nth(i).unwrap().len() < most_len {
+                        for i in
+                            config.ascii.to_string().lines().nth(i + 1).unwrap().len()..most_len
+                        {
+                            white_space += " ";
+                        }
+                    }
+                    println!(
+                        "{}{}   {}",
+                        config.ascii.to_string().lines().nth(i).unwrap(),
+                        white_space,
+                        data
+                    );
+                } else {
+                    let mut white_space: String = "".to_string();
+                    for i in 0..most_len {
+                        white_space += " ";
+                    }
+
+                    println!("{}   {}", white_space, data);
+                }
+                i += 1;
+            }
+        }
+    }
 }
