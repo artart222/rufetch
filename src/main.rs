@@ -146,6 +146,8 @@ fn main() {
         }
     }
 
+    // Finding number of lines of ascii string.
+    // And finding len of longest line.
     let mut most_len = 0;
     let mut lines = 0;
     for line in config.ascii.to_string().lines() {
@@ -155,54 +157,75 @@ fn main() {
         }
     }
 
-    let a = datas.len();
+    // Choose len of between ascii in datas in printing.
+    let gap = {
+        if lines == 0 {
+            0
+        } else {
+            3
+        }
+    };
+
+    // Making actual string of gap.
+    let gap = {
+        let mut white_space: String = "".to_string();
+        for _ in 0..gap {
+            white_space += " ";
+        }
+        white_space
+    };
+
     let mut index = 0;
+    // We will use this string later to add needed
+    // white space to lines that are shorter than longest line
+    // To make all lines len similar.
+    let mut white_space: String = String::new();
+    // If number of lines is more/equal to number of datas.
     if lines >= datas.len() {
+        // Iterating over lines of ascii.
         for line in config.ascii.to_string().lines() {
-            let mut white_space: String = "".to_string();
-            for i in line.len()..most_len {
+            // Making white_space string.
+            white_space = "".to_string(); // Reseting white_space.
+            for _ in line.len()..most_len {
                 white_space += " ";
             }
+            // If we have data for printing this line will print that.
             if datas.len() >= index + 1 {
-                println!("{}{}   {}", line, white_space, datas[index]);
+                println!("{}{}{}{}", line, white_space, gap, datas[index]);
             } else {
-                println!("{}{}   ", line, white_space);
+                // Printing just string without any data because we don't have any data!.
+                println!("{}{}{}", line, white_space, gap);
             }
             index += 1;
         }
     } else {
-        if lines == 0 {
-            for data in datas {
-                println!("{}", data);
-            }
-        } else {
-            let mut i = 0;
-            for data in datas {
-                if i <= lines - 1 {
-                    let mut white_space: String = "".to_string();
-                    if config.ascii.to_string().lines().nth(i).unwrap().len() < most_len {
-                        for i in
-                            config.ascii.to_string().lines().nth(i + 1).unwrap().len()..most_len
-                        {
-                            white_space += " ";
-                        }
-                    }
-                    println!(
-                        "{}{}   {}",
-                        config.ascii.to_string().lines().nth(i).unwrap(),
-                        white_space,
-                        data
-                    );
-                } else {
-                    let mut white_space: String = "".to_string();
-                    for i in 0..most_len {
-                        white_space += " ";
-                    }
-
-                    println!("{}   {}", white_space, data);
+        // Iterate over datas (I used index variable to work with indexes)
+        // index is defined before we start process of printing.
+        for _ in &datas {
+            // Reseting white_space.
+            white_space = "".to_string();
+            // If we have data for printing this code block will print it.
+            if lines >= index + 1 {
+                // Making white_space string.
+                for _ in config.ascii.to_string().lines().nth(index).unwrap().len()..most_len {
+                    white_space += " ";
                 }
-                i += 1;
+                println!(
+                    "{}{}{}{}",
+                    config.ascii.to_string().lines().nth(index).unwrap(),
+                    white_space,
+                    gap,
+                    datas[index]
+                );
+            } else {
+                // Making white_space string.
+                for _ in 0..most_len {
+                    white_space += " ";
+                }
+                // Printing just datas without any ascii anymore!.
+                println!("{}{}{}", white_space, gap, datas[index]);
             }
+            index += 1;
         }
-    } // TODO: I definitely must fix this bullshit.
+    }
 }
