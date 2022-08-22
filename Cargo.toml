@@ -11,6 +11,8 @@ sysinfo = "0.23.11"
 toml = "0.5.9"
 serde_derive = "1.0.136"
 serde = "1.0"
+dirs = "4.0.0"
+whoami = "0.9.0"
 
 [profile.release]
 # Enable link-time optimization, eliminates more code and inlines across crate boundaries.
