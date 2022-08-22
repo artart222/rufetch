@@ -1,15 +1,13 @@
-use std::collections::HashMap;
-
+// For reading and storing config.
 mod config;
 use crate::config::{read_config, Config};
-
+// Some functions for getting infos.
 mod get_info;
-use crate::get_info::{cpu_count, get_mem, get_swap, os_info};
-
+use crate::get_info::{cpu_info, get_mem, get_swap, os_info};
 use sysinfo::{System, SystemExt};
 
 fn unit_converter(current_unit: char, convert_to: char, input: u64) -> u64 {
-    let units = HashMap::from([
+    let units = std::collections::HashMap::from([
         ('B', 1.0),
         ('K', 1000.0),
         ('M', 1000000.0),
@@ -28,26 +26,61 @@ fn main() {
     if config.total_mem || config.used_mem || config.free_mem {
         let mem_info = get_mem(&sys, &config);
         if config.total_mem {
-            datas.push(mem_info.0.to_string());
+            datas.push(" Total memory: ".to_string() + &mem_info["TOTAL_MEM"].to_string());
         }
         if config.free_mem {
-            datas.push(mem_info.1.to_string());
+            datas.push(" Free memory: ".to_string() + &mem_info["FREE_MEM"].to_string());
         }
         if config.used_mem {
-            datas.push(mem_info.2.to_string());
+            datas.push(" Used memory: ".to_string() + &mem_info["USED_MEM"].to_string());
         }
     }
     if config.total_swap || config.used_swap || config.free_swap {
         let swap_info = get_swap(&sys, &config);
         if config.total_swap {
-            datas.push(swap_info.0.to_string());
+            datas.push(" Total swap: ".to_string() + &swap_info["TOTAL_SWAP"].to_string());
         }
         if config.free_swap {
-            datas.push(swap_info.1.to_string());
+            datas.push(" Free swap: ".to_string() + &swap_info["FREE_SWAP"].to_string());
         }
         if config.used_swap {
-            datas.push(swap_info.2.to_string());
+            datas.push(" Used swap: ".to_string() + &swap_info["USED_SWAP"].to_string());
         }
+    }
+
+    if config.os_name
+        || config.os_version
+        || config.kernel_version
+        || config.host_name
+        || config.user_name
+        || config.up_time
+    {
+        let os_info = os_info(&sys);
+        if config.os_name {
+            datas.push(" Operating system: ".to_string() + &os_info["OS_NAME"].to_string());
+        }
+        if config.os_version {
+            datas.push(" OS version: ".to_string() + &os_info["OS_VERSION"].to_string());
+        }
+        if config.kernel_version {
+            datas.push(" Kernel version: ".to_string() + &os_info["KERNEL_VERSION"].to_string());
+        }
+        if config.host_name {
+            datas.push(" Host: ".to_string() + &os_info["HOSTNAME"].to_string());
+        }
+        if config.user_name {
+            datas.push(" User: ".to_string() + &os_info["USERNAME"].to_string());
+        }
+        if config.up_time {
+            datas.push(" Uptime: ".to_string() + &os_info["UP_TIME"].to_string());
+        }
+    }
+
+    if config.cores_count || config.cpu_frequency || config.cpu_brand {
+        let cpu_info = cpu_info(&sys);
+        datas.push(" Cpu brand: ".to_string() + &cpu_info["CPU_BRAND"].to_string());
+        datas.push(" Cpu frequency: ".to_string() + &cpu_info["FREQUENCY"].to_string());
+        datas.push(" Cpu cores: ".to_string() + &cpu_info["CORES_COUNT"].to_string());
     }
 
     // Finding number of lines of ascii string.
@@ -56,8 +89,8 @@ fn main() {
     let mut lines = 0;
     for line in config.ascii.to_string().lines() {
         lines += 1;
-        if line.len() > longest_len {
-            longest_len = line.len();
+        if line.chars().count() > longest_len {
+            longest_len = line.chars().count();
         }
     }
 
@@ -90,7 +123,7 @@ fn main() {
         for line in config.ascii.to_string().lines() {
             // Making white_space string.
             white_space = "".to_string(); // Reseting white_space.
-            for _ in line.len()..longest_len {
+            for _ in line.chars().count()..longest_len {
                 white_space += " ";
             }
             // If we have data for printing this line will print that.
@@ -109,6 +142,7 @@ fn main() {
             // Reseting white_space.
             white_space = "".to_string();
             // If we have data for printing this code block will print it.
+            //Check this part
             if lines >= index + 1 {
                 // Making white_space string.
                 for _ in config.ascii.to_string().lines().nth(index).unwrap().len()..longest_len {
