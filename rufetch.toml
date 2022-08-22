@@ -15,6 +15,13 @@ free_swap = true
 total_swap = true
 used_swap = true
 
+os_name = true
+os_version = true
+kernel_version = true
+host_name = true
+user_name = true
+up_time = true
+
 cpu_count = true
 
 ascii = """
