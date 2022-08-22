@@ -12,13 +12,15 @@ pub struct Config {
     pub free_swap: bool,
     pub total_swap: bool,
     pub used_swap: bool,
-    pub cpu_count: bool,
     pub os_name: bool,
     pub os_version: bool,
     pub kernel_version: bool,
     pub host_name: bool,
     pub user_name: bool,
     pub up_time: bool,
+    pub cores_count: bool,
+    pub cpu_brand: bool,
+    pub cpu_frequency: bool,
     pub ascii: String,
 }
 
@@ -38,9 +40,10 @@ pub fn read_config() -> Config {
         kernel_version: true,
         host_name: true,
         user_name: true,
+        cores_count: true,
+        cpu_brand: true,
+        cpu_frequency: true,
         up_time: true,
-
-        cpu_count: true,
         ascii: "".to_string(),
     };
 
